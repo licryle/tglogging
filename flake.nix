@@ -12,6 +12,10 @@
         devShells.default = pkgs.mkShell {
           packages = [
             pkgs.python3
+            pkgs.python3Packages.pip
+            pkgs.python3Packages.build
+            pkgs.python3Packages.setuptools
+            pkgs.python3Packages.wheel
           ];
         };
       });

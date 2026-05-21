@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tglogging"
+version = "0.0.1"
+description = "Tiny logging utility to align logs, stdout and telegram notifications/logs."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+
+authors = [
+  { name = "Cyrille Berliat" }
+]
+
+dependencies = []
