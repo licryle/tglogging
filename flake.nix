@@ -17,6 +17,10 @@
             pkgs.python3Packages.setuptools
             pkgs.python3Packages.wheel
           ];
+
+          shellHook = ''
+            export PYTHONPATH=$PWD/src:$PYTHONPATH
+          '';
         };
       });
 }
