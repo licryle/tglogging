@@ -1,12 +1,14 @@
 import logging
 import pytest
 from tglogging import LoggingConfig
-from tglogging.tglogging import TelegramHandler, _send_telegram_message
+from tglogging._internal import TelegramHandler, _send_telegram_message
 
 class DummySender:
     def __init__(self):
+        print("plop")
         self.calls = []
     def __call__(self, token, chat_id, message):
+        print("plop2")
         self.calls.append((token, chat_id, message))
 
 # Configuration validation tests
@@ -37,7 +39,7 @@ def test_invalid_thread_suffix_non_digit():
 
 def test_telegram_handler_no_token(monkeypatch):
     dummy = DummySender()
-    monkeypatch.setattr('tglogging.tglogging._send_telegram_message', dummy)
+    monkeypatch.setattr('tglogging.telegram._send_telegram_message', dummy)
     handler = TelegramHandler(bot_token=None, level_chat_ids={logging.ERROR: ["123"]})
     logger = logging.getLogger("tglogging.test_no_token")
     logger.setLevel(logging.DEBUG)
@@ -47,7 +49,7 @@ def test_telegram_handler_no_token(monkeypatch):
 
 def test_telegram_handler_sends_message(monkeypatch):
     dummy = DummySender()
-    monkeypatch.setattr('tglogging.tglogging._send_telegram_message', dummy)
+    monkeypatch.setattr('tglogging.telegram._send_telegram_message', dummy)
     token = "dummy-token"
     chat_id = "321"
     handler = TelegramHandler(bot_token=token, level_chat_ids={logging.ERROR: [chat_id]})
@@ -63,7 +65,7 @@ def test_telegram_handler_sends_message(monkeypatch):
 
 def test_telegram_handler_respects_level(monkeypatch):
     dummy = DummySender()
-    monkeypatch.setattr('tglogging.tglogging._send_telegram_message', dummy)
+    monkeypatch.setattr('tglogging.telegram._send_telegram_message', dummy)
     handler = TelegramHandler(bot_token="tok", level_chat_ids={logging.ERROR: ["123"]})
     logger = logging.getLogger("tglogging.level_test")
     logger.setLevel(logging.DEBUG)
@@ -76,3 +78,19 @@ def test_telegram_handler_respects_level(monkeypatch):
     _, chat, msg = dummy.calls[0]
     assert chat == "123"
     assert "error should send" in msg
+
+
+def test_telegram_handler_missing_token_but_chat_ids():
+    # Token is None but level_chat_ids is non‑empty; handler should silently ignore sending
+    handler = TelegramHandler(bot_token=None, level_chat_ids={logging.ERROR: ["12345"]})
+    logger = logging.getLogger("tglogging.edge")
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+    # No exception should be raised when logging an error
+    logger.error("test message with no token")
+    assert True
+
+def test_invalid_level_chat_ids_type():
+    # level_chat_ids keys must be ints; passing a str should raise TypeError when handler accesses it
+    with pytest.raises(TypeError):
+        TelegramHandler(bot_token="dummy", level_chat_ids={"ERROR": ["123"]})
