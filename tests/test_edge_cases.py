@@ -2,15 +2,14 @@ import logging
 import os
 import pathlib
 import pytest
-from tglogging import TGLoggingConfig, init_logging
+from tglogging import LoggingConfig, configure_logger
 from tglogging.tglogging import TelegramHandler
 
 def test_invalid_log_file_path(tmp_path):
     # Provide a path to a directory without write permission (simulate by using a file path that is a directory)
     invalid_path = tmp_path / "nonexistent_dir" / "log.log"
-    cfg = TGLoggingConfig(log_file_path=str(invalid_path), telegram_bot_token=None, level_chat_ids={})
-    # init_logging should create parent dirs; no exception expected
-    logger = init_logging("testapp", cfg)
+    cfg = LoggingConfig(log_file_path=str(invalid_path), telegram_bot_token=None, level_chat_ids={})
+    logger = configure_logger("testapp", cfg)
     assert isinstance(logger, logging.Logger)
     # Ensure the file was created
     assert pathlib.Path(cfg.log_file_path).exists()

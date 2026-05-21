@@ -6,27 +6,27 @@ from datetime import datetime
 import pytest
 
 # Import the library modules
-from tglogging import TGLoggingConfig, init_logging
-from tglogging.tglogging import Formatter, ColoredFormatter, TelegramHandler
+from tglogging import LoggingConfig, configure_logger
+from tglogging.tglogging import BaseFormatter, ColoredFormatter, TelegramHandler
 
 @pytest.fixture
 def config(tmp_path):
     # Create a temporary log file path
     log_path = tmp_path / "test.log"
-    return TGLoggingConfig(
+    return LoggingConfig(
         log_file_path=str(log_path),
         telegram_bot_token=None,
         level_chat_ids={},
     )
 
 def test_default_config_values():
-    cfg = TGLoggingConfig()
+    cfg = LoggingConfig()
     assert cfg.log_file_path == "./data/logs/yt2podcast.log"
     assert cfg.telegram_bot_token is None
     assert cfg.level_chat_ids == {}
 
 def test_formatter_output():
-    fmt = Formatter(program_name="myapp")
+    fmt = BaseFormatter(program_name="myapp")
     record = logging.LogRecord(
         name="test.logger",
         level=logging.INFO,

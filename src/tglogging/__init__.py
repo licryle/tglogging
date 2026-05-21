@@ -1,3 +1,6 @@
-from .tglogging import init_logging, TGLoggingConfig
+from .tglogging import configure_logger, LoggingConfig
 
-__all__ = ["init_logging", "TGLoggingConfig"]
+__all__ = [
+    "configure_logger",
+    "LoggingConfig",
+]
