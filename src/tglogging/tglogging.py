@@ -46,4 +46,6 @@ def configure_logger(program_name: str, cfg: LoggingConfig, verbose: bool = Fals
     telegram_handler.setFormatter(BaseFormatter())
     logger.addHandler(telegram_handler)
 
+    logger.propagate = False
+
     return logger

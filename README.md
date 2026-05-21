@@ -57,6 +57,8 @@ logger.error("Error encountered – also forwarded to Telegram.")
 logger.critical("Critical failure – immediate attention required!")
 ```
 
+> **Note:** `configure_logger` sets `logger.propagate = False` to prevent log records from bubbling up to ancestor loggers, avoiding duplicate output. You can reactivate on the returned object from `configure_logger`.
+
 The library ships a `TelegramHandler` that forwards log records to the Telegram Bot API. See the `src/tglogging/telegram.py` module for details.
 
 ---
