@@ -10,13 +10,13 @@
         pkgs = nixpkgs.legacyPackages.${system};
       in {
         devShells.default = pkgs.mkShell {
-          packages = [
-            pkgs.python3
-            pkgs.python3Packages.pip
-            pkgs.python3Packages.build
-            pkgs.python3Packages.setuptools
-            pkgs.python3Packages.wheel
-          ];
+            packages = with pkgs.python311Packages; [
+                python
+                setuptools
+                wheel
+                pytest
+                pygments
+            ];
 
           shellHook = ''
             export PYTHONPATH=$PWD/src:$PYTHONPATH
