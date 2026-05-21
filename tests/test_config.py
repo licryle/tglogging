@@ -13,6 +13,16 @@ def test_valid_config():
     )
     assert cfg.level_chat_ids[logging.ERROR] == ["123", "456:789"]
 
+def test_priority_info():
+    cfg = LoggingConfig(
+        log_file_path="log.txt",
+        telegram_bot_token="token",
+        level_chat_ids={logging.ERROR: ["123", "456:789"]},
+    )
+    logger = configure_logger("testapp", cfg)
+    logger.priority_info("Hello")
+    assert True
+
 def test_invalid_log_file_path():
     with pytest.raises(ValueError):
         LoggingConfig(log_file_path="")

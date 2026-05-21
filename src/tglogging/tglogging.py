@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from .config import LoggingConfig
 from .formatters import ColoredFormatter, BaseFormatter
 from .telegram import TelegramHandler
+from . import priority_info #ensures the monkey patch is setup
 
 def configure_logger(program_name: str, cfg: LoggingConfig, verbose: bool = False) -> logging.Logger:
     """Initialise the logger for the application.
