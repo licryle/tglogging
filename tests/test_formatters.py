@@ -21,7 +21,7 @@ def config(tmp_path):
 
 def test_default_config_values():
     cfg = LoggingConfig()
-    assert cfg.log_file_path == "./data/logs/yt2podcast.log"
+    assert cfg.log_file_path == None
     assert cfg.telegram_bot_token is None
     assert cfg.level_chat_ids == {}
 

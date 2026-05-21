@@ -12,12 +12,12 @@ class LoggingConfig:
       ``list`` of chat‑id strings. Each chat‑id may be ``"<chat_id>"``
       or ``"<chat_id>:<thread_id>"`` / ``"<chat_id>_<thread_id>"``.
     """
-    log_file_path: str = "./data/logs/yt2podcast.log"
+    log_file_path: str = None
     telegram_bot_token: Union[str, None] = None
     level_chat_ids: Dict[int, List[str]] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not isinstance(self.log_file_path, str) or not self.log_file_path:
+        if self.log_file_path and not isinstance(self.log_file_path, str):
             raise ValueError("log_file_path must be a non‑empty string")
         if self.telegram_bot_token is not None and (
             not isinstance(self.telegram_bot_token, str) or not self.telegram_bot_token

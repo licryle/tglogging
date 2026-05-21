@@ -23,14 +23,15 @@ def configure_logger(program_name: str, cfg: LoggingConfig, verbose: bool = Fals
 
     # File handler
     log_path = Path(cfg.log_file_path)
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    file_handler = logging.FileHandler(log_path, encoding='utf-8')
-    file_formatter = logging.Formatter(
-        f'[{program_name}][%(levelname)s] %(asctime)s - %(name)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S',
-    )
-    file_handler.setFormatter(file_formatter)
-    logger.addHandler(file_handler)
+    if log_path:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        file_handler = logging.FileHandler(log_path, encoding='utf-8')
+        file_formatter = logging.Formatter(
+            f'[{program_name}][%(levelname)s] %(asctime)s - %(name)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S',
+        )
+        file_handler.setFormatter(file_formatter)
+        logger.addHandler(file_handler)
 
     # Console handler with optional colour output
     console_handler = logging.StreamHandler()
