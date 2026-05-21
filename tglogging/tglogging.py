@@ -1,11 +1,14 @@
 import logging
-import os
+
 import urllib.request
 import json
+import html
 from pathlib import Path
 import datetime
-from dataclasses import dataclass, field
+
 from typing import Dict, List
+
+from dataclasses import dataclass, field
 
 
 # Define custom log level for special priority information
@@ -18,33 +21,6 @@ def _priority_info(self, message, *args, **kwargs):
         self._log(PRIORITY_INFO, message, args, **kwargs)
 
 logging.Logger.priority_info = _priority_info
-
-# Default configuration values; can be overridden by environment variables
-LOG_FILE_PATH = os.getenv('YT2PODCAST_LOG_FILE', './data/logs/yt2podcast.log')
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-
-# Environment variables for per-level Telegram chat IDs (comma-separated lists)
-def _parse_chat_ids(env_name: str) -> list[str]:
-    ids = os.getenv(env_name)
-    if not ids:
-        return []
-    return [cid.strip() for cid in ids.split(',') if cid.strip()]
-
-# Mapping from logging level to its corresponding environment variable name
-_LEVEL_CHAT_ENV = {
-    logging.DEBUG: 'TELEGRAM_CHAT_IDS_DEBUG',
-    logging.INFO: 'TELEGRAM_CHAT_IDS_INFO',
-    PRIORITY_INFO: 'TELEGRAM_CHAT_IDS_PRIORITY_INFO',
-    logging.WARNING: 'TELEGRAM_CHAT_IDS_WARNING',
-    logging.ERROR: 'TELEGRAM_CHAT_IDS_ERROR',
-    logging.CRITICAL: 'TELEGRAM_CHAT_IDS_CRITICAL',
-}
-
-# Pre-compute chat ID lists for each level
-_LEVEL_CHAT_IDS = {level: _parse_chat_ids(env) for level, env in _LEVEL_CHAT_ENV.items()}
-
-
-
 
 # ------------------------------------------------------------
 # Config container – independent of the logger implementation
@@ -91,15 +67,23 @@ def _send_telegram_message(token: str, chat_id: str, message: str) -> None:
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {
         "chat_id": real_chat_id,
-        "text": message,
+        "text": html.escape(message),
         "parse_mode": "HTML",
     }
     if thread_id is not None:
         payload["message_thread_id"] = thread_id
     data = json.dumps(payload).encode('utf-8')
     req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"}, method="POST")
-    with urllib.request.urlopen(req, timeout=10):
-        pass
+    try:
+        with urllib.request.urlopen(req, timeout=10) as response:
+            # Consume response to ensure request completes
+            response.read()
+    except urllib.error.HTTPError as e:
+        logging.getLogger(__name__).error(f"Telegram API HTTPError {e.code}: {e.reason}")
+    except urllib.error.URLError as e:
+        logging.getLogger(__name__).error(f"Telegram API URLError: {e.reason}")
+    except Exception as e:
+        logging.getLogger(__name__).error(f"Unexpected error sending Telegram message: {e}")
 
 class TelegramHandler(logging.Handler):
     """Handler that sends log records to Telegram.
@@ -150,22 +134,8 @@ class ColoredFormatter(Formatter):
         formatted = self._format_message(record)
         return f"{color}{formatted}{self.RESET}"
 
-def init_logging(program_name: str, verbose: bool = False, cfg: TGLoggingConfig | None = None) -> logging.Logger:
-    """Initialise the logger for the application.
-
-    If a ``TGLoggingConfig`` instance is provided, its values are used.
-    Otherwise we fall back to reading the legacy environment variables for
-    backward compatibility.
-    """
-    # Resolve configuration
-    if cfg is None:
-        cfg = TGLoggingConfig(
-            log_file_path=os.getenv('YT2PODCAST_LOG_FILE', './data/logs/yt2podcast.log'),
-            telegram_bot_token=os.getenv('TELEGRAM_BOT_TOKEN'),
-            level_chat_ids={
-                level: _parse_chat_ids(env_name) for level, env_name in _LEVEL_CHAT_ENV.items()
-            },
-        )
+def init_logging(program_name: str, cfg: TGLoggingConfig, verbose: bool = False) -> logging.Logger:
+    """Initialise the logger for the application."""
 
     logger = logging.getLogger(program_name)
     logger.setLevel(logging.DEBUG if verbose else logging.INFO)
@@ -199,4 +169,3 @@ def init_logging(program_name: str, verbose: bool = False, cfg: TGLoggingConfig 
     logger.addHandler(telegram_handler)
 
     return logger
-
