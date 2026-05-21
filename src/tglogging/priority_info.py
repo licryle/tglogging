@@ -2,6 +2,7 @@ import logging
 
 # Define custom log level for special priority information
 PRIORITY_INFO = 25  # Between INFO (20) and WARNING (30)
+logging.PRIORITY_INFO = PRIORITY_INFO
 logging.addLevelName(PRIORITY_INFO, "PRIORITY_INFO")
 
 # Monkey-patch Logger to add a convenience method
