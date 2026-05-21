@@ -4,13 +4,9 @@ import datetime
 class BaseFormatter(logging.Formatter):
     """Simple log record formatter used by file and telegram handlers."""
 
-    def __init__(self, program_name: str):
-        super().__init__()
-        self.program_name = program_name
-
     def _format_message(self, record: logging.LogRecord) -> str:
         timestamp = datetime.datetime.fromtimestamp(record.created).strftime('%Y-%m-%d %H:%M:%S')
-        return f"[{self.program_name}][{record.levelname}] {timestamp} - {record.name} - {record.getMessage()}"
+        return f"[{record.name}][{record.levelname}] {timestamp} - {record.getMessage()}"
 
     def format(self, record: logging.LogRecord) -> str:
         return self._format_message(record)

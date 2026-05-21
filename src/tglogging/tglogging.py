@@ -26,19 +26,15 @@ def configure_logger(program_name: str, cfg: LoggingConfig, verbose: bool = Fals
     if log_path:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         file_handler = logging.FileHandler(log_path, encoding='utf-8')
-        file_formatter = logging.Formatter(
-            f'[{program_name}][%(levelname)s] %(asctime)s - %(name)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S',
-        )
-        file_handler.setFormatter(file_formatter)
+        file_handler.setFormatter(BaseFormatter())
         logger.addHandler(file_handler)
 
     # Console handler with optional colour output
     console_handler = logging.StreamHandler()
     try:
-        console_handler.setFormatter(ColoredFormatter(program_name))
+        console_handler.setFormatter(ColoredFormatter())
     except Exception:
-        console_handler.setFormatter(BaseFormatter(program_name))
+        console_handler.setFormatter(BaseFormatter())
     logger.addHandler(console_handler)
 
     # Telegram handler (plain formatting)
@@ -47,7 +43,7 @@ def configure_logger(program_name: str, cfg: LoggingConfig, verbose: bool = Fals
         level_chat_ids=cfg.level_chat_ids,
     )
     telegram_handler.setLevel(logging.DEBUG)
-    telegram_handler.setFormatter(BaseFormatter(program_name))
+    telegram_handler.setFormatter(BaseFormatter())
     logger.addHandler(telegram_handler)
 
     return logger

@@ -26,7 +26,7 @@ def test_default_config_values():
     assert cfg.level_chat_ids == {}
 
 def test_formatter_output():
-    fmt = BaseFormatter(program_name="myapp")
+    fmt = BaseFormatter()
     record = logging.LogRecord(
         name="test.logger",
         level=logging.INFO,
@@ -40,8 +40,8 @@ def test_formatter_output():
     fixed_time = datetime(2020, 1, 1, 12, 0, 0).timestamp()
     record.created = fixed_time
     formatted = fmt.format(record)
-    # Expected format: [myapp][INFO] 2020-01-01 12:00:00 - test.logger - Hello World
-    assert formatted == "[myapp][INFO] 2020-01-01 12:00:00 - test.logger - Hello World"
+    # Expected format: [test.logger][INFO] 2020-01-01 12:00:00 - Hello World
+    assert formatted == "[test.logger][INFO] 2020-01-01 12:00:00 - Hello World"
 
 def test_telegram_handler_no_token(caplog):
     handler = TelegramHandler(bot_token=None, level_chat_ids={logging.ERROR: ["123"]})
