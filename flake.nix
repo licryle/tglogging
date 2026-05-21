@@ -16,6 +16,7 @@
                 wheel
                 pytest
                 pygments
+                build
             ];
 
           shellHook = ''
