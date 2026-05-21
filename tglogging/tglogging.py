@@ -4,11 +4,8 @@ import urllib.request
 import json
 from pathlib import Path
 import datetime
-
-# Helper to build a consistent log line (used by both console and Telegram)
-def _format_message(record: logging.LogRecord, program_name: str) -> str:
-    timestamp = datetime.datetime.fromtimestamp(record.created).strftime('%Y-%m-%d %H:%M:%S')
-    return f"[{program_name}][{record.levelname}] {timestamp} - {record.name} - {record.getMessage()}"
+from dataclasses import dataclass, field
+from typing import Dict, List
 
 
 # Define custom log level for special priority information
@@ -46,23 +43,28 @@ _LEVEL_CHAT_ENV = {
 # Pre-compute chat ID lists for each level
 _LEVEL_CHAT_IDS = {level: _parse_chat_ids(env) for level, env in _LEVEL_CHAT_ENV.items()}
 
-class TelegramHandler(logging.Handler):
-    """Custom logging handler that sends log records to Telegram.
-    It sends all records to the default chat, but records with level >= WARNING
-    are also sent to the alert chat if configured.
+
+
+
+# ------------------------------------------------------------
+# Config container – independent of the logger implementation
+# ------------------------------------------------------------
+
+@dataclass(frozen=True)
+class TGLoggingConfig:
+    """Immutable holder for all configuration needed by tg_logging.
+    The application creates this object at start‑up and passes it to
+    ``init_logging``.  If ``None`` is given, ``init_logging`` falls back
+    to reading the traditional environment variables (backwards
+    compatibility).
     """
-    def emit(self, record: logging.LogRecord) -> None:
-        try:
-            msg = self.format(record)
-            # Send to main chat
-            if TELEGRAM_BOT_TOKEN:
-                # Determine target chat IDs based on log level
-                chat_ids = _LEVEL_CHAT_IDS.get(record.levelno, [])
-                for chat_id in chat_ids:
-                    if chat_id:
-                        _send_telegram_message(TELEGRAM_BOT_TOKEN, chat_id, msg)
-        except Exception:
-            self.handleError(record)
+    log_file_path: str = "./data/logs/yt2podcast.log"
+    telegram_bot_token: str | None = None
+    # Mapping ``logging level -> list of chat IDs`` (strings).  The IDs may
+    # contain an optional thread suffix ("<chat_id>:<thread_id>" or
+    # "<chat_id>_<thread_id>") which ``_send_telegram_message`` will
+    # interpret.
+    level_chat_ids: Dict[int, List[str]] = field(default_factory=dict)
 
 def _send_telegram_message(token: str, chat_id: str, message: str) -> None:
     """Helper to POST a message to Telegram Bot API.
@@ -99,50 +101,102 @@ def _send_telegram_message(token: str, chat_id: str, message: str) -> None:
     with urllib.request.urlopen(req, timeout=10):
         pass
 
-def init_logging(program_name: str, verbose: bool = False) -> logging.Logger:
-    """Initialise the root logger for a given program.
-    Returns the configured logger instance.
+class TelegramHandler(logging.Handler):
+    """Handler that sends log records to Telegram.
+    ``bot_token`` and ``level_chat_ids`` are supplied by the caller – the
+    module stays independent from any global ``os.getenv`` calls.
     """
+
+    def __init__(self, bot_token: str | None, level_chat_ids: Dict[int, List[str]]) -> None:
+        super().__init__()
+        self.bot_token = bot_token
+        self.level_chat_ids = level_chat_ids
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            msg = self.format(record)
+            if not self.bot_token:
+                return
+            chat_ids = self.level_chat_ids.get(record.levelno, [])
+            for chat_id in chat_ids:
+                if chat_id:
+                    _send_telegram_message(self.bot_token, chat_id, msg)
+        except Exception:
+            self.handleError(record)
+
+class Formatter(logging.Formatter):
+    def __init__(self, program_name: str):
+        super().__init__()
+        self.program_name = program_name
+
+    def _format_message(self, record: logging.LogRecord) -> str:
+        timestamp = datetime.datetime.fromtimestamp(record.created).strftime('%Y-%m-%d %H:%M:%S')
+        return f"[{self.program_name}][{record.levelname}] {timestamp} - {record.name} - {record.getMessage()}"
+
+    def format(self, record: logging.LogRecord) -> str:
+        return self._format_message(record)
+
+class ColoredFormatter(Formatter):
+    COLORS = {
+        'DEBUG': '\033[90m',    # Grey
+        'INFO': '\033[94m',     # Blue
+        'WARNING': '\033[93m',  # Yellow
+        'ERROR': '\033[91m',    # Red
+        'CRITICAL': '\033[41m', # Red background
+    }
+    RESET = '\033[0m'
+    def format(self, record: logging.LogRecord) -> str:
+        color = self.COLORS.get(record.levelname, self.RESET)
+        formatted = self._format_message(record)
+        return f"{color}{formatted}{self.RESET}"
+
+def init_logging(program_name: str, verbose: bool = False, cfg: TGLoggingConfig | None = None) -> logging.Logger:
+    """Initialise the logger for the application.
+
+    If a ``TGLoggingConfig`` instance is provided, its values are used.
+    Otherwise we fall back to reading the legacy environment variables for
+    backward compatibility.
+    """
+    # Resolve configuration
+    if cfg is None:
+        cfg = TGLoggingConfig(
+            log_file_path=os.getenv('YT2PODCAST_LOG_FILE', './data/logs/yt2podcast.log'),
+            telegram_bot_token=os.getenv('TELEGRAM_BOT_TOKEN'),
+            level_chat_ids={
+                level: _parse_chat_ids(env_name) for level, env_name in _LEVEL_CHAT_ENV.items()
+            },
+        )
+
     logger = logging.getLogger(program_name)
     logger.setLevel(logging.DEBUG if verbose else logging.INFO)
-    # Ensure log directory exists
-    log_path = Path(LOG_FILE_PATH)
+
+    # File handler
+    log_path = Path(cfg.log_file_path)
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    # File handler with simple formatter
     file_handler = logging.FileHandler(log_path, encoding='utf-8')
-    file_formatter = logging.Formatter(f'[{program_name}][%(levelname)s] %(asctime)s - %(name)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    file_formatter = logging.Formatter(
+        f'[{program_name}][%(levelname)s] %(asctime)s - %(name)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+    )
     file_handler.setFormatter(file_formatter)
     logger.addHandler(file_handler)
-    # Console handler with optional color output
+
+    # Console handler with optional colour output
     console_handler = logging.StreamHandler()
     try:
-        from colorama import init as colorama_init, Fore, Style
-        colorama_init()
-        class ColoredFormatter(logging.Formatter):
-            COLORS = {
-                'DEBUG': Fore.LIGHTBLACK_EX,
-                'INFO': Fore.LIGHTBLUE_EX,
-                'PRIORITY_INFO': Fore.MAGENTA,
-                'WARNING': Fore.YELLOW,
-                'ERROR': Fore.LIGHTRED_EX,
-                'CRITICAL': Fore.RED + Style.BRIGHT,
-            }
-            RESET = Style.RESET_ALL
-            def format(self, record: logging.LogRecord) -> str:
-                color = self.COLORS.get(record.levelname, self.RESET)
-                formatted = _format_message(record, program_name)
-                return f"{color}{formatted}{self.RESET}"
-        console_handler.setFormatter(ColoredFormatter())
+        console_handler.setFormatter(ColoredFormatter(program_name))
     except Exception:
-        console_handler.setFormatter(logging.Formatter('[%(levelname)s] %(message)s'))
+        console_handler.setFormatter(Formatter(program_name))
     logger.addHandler(console_handler)
-    # Telegram handler for alerts and routing
-    telegram_handler = TelegramHandler()
+
+    # Telegram handler (plain formatting)
+    telegram_handler = TelegramHandler(
+        bot_token=cfg.telegram_bot_token,
+        level_chat_ids=cfg.level_chat_ids,
+    )
     telegram_handler.setLevel(logging.DEBUG)
-    # Formatter for Telegram (plain, no colors) matching console layout
-    class TelegramFormatter(logging.Formatter):
-        def format(self, record: logging.LogRecord) -> str:
-            return _format_message(record, program_name)
-    telegram_handler.setFormatter(TelegramFormatter())
+    telegram_handler.setFormatter(Formatter(program_name))
     logger.addHandler(telegram_handler)
+
     return logger
+
