@@ -95,6 +95,8 @@ class TelegramHandler(logging.Handler):
         super().__init__()
         self.bot_token = bot_token
         self.level_chat_ids = level_chat_ids
+        if not all(isinstance(k, int) for k in self.level_chat_ids):
+            raise TypeError("level_chat_ids keys must be ints")
 
     def emit(self, record: logging.LogRecord) -> None:
         try:
@@ -122,11 +124,12 @@ class Formatter(logging.Formatter):
 
 class ColoredFormatter(Formatter):
     COLORS = {
-        'DEBUG': '\033[90m',    # Grey
-        'INFO': '\033[94m',     # Blue
-        'WARNING': '\033[93m',  # Yellow
-        'ERROR': '\033[91m',    # Red
-        'CRITICAL': '\033[41m', # Red background
+        'DEBUG': '\033[90m',        # Grey
+        'INFO': '\033[94m',         # Blue
+        'PRIORITY_INFO': '\033[94m',# Blue
+        'WARNING': '\033[93m',      # Yellow
+        'ERROR': '\033[91m',        # Red
+        'CRITICAL': '\033[41m',     # Red background
     }
     RESET = '\033[0m'
     def format(self, record: logging.LogRecord) -> str:

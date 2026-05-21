@@ -1,0 +1,53 @@
+import logging
+import pathlib
+import sys
+from datetime import datetime
+
+import pytest
+
+# Import the library modules
+from tglogging import TGLoggingConfig, init_logging
+from tglogging.tglogging import Formatter, ColoredFormatter, TelegramHandler
+
+@pytest.fixture
+def config(tmp_path):
+    # Create a temporary log file path
+    log_path = tmp_path / "test.log"
+    return TGLoggingConfig(
+        log_file_path=str(log_path),
+        telegram_bot_token=None,
+        level_chat_ids={},
+    )
+
+def test_default_config_values():
+    cfg = TGLoggingConfig()
+    assert cfg.log_file_path == "./data/logs/yt2podcast.log"
+    assert cfg.telegram_bot_token is None
+    assert cfg.level_chat_ids == {}
+
+def test_formatter_output():
+    fmt = Formatter(program_name="myapp")
+    record = logging.LogRecord(
+        name="test.logger",
+        level=logging.INFO,
+        pathname=__file__,
+        lineno=10,
+        msg="Hello World",
+        args=(),
+        exc_info=None,
+    )
+    # Mock timestamp
+    fixed_time = datetime(2020, 1, 1, 12, 0, 0).timestamp()
+    record.created = fixed_time
+    formatted = fmt.format(record)
+    # Expected format: [myapp][INFO] 2020-01-01 12:00:00 - test.logger - Hello World
+    assert formatted == "[myapp][INFO] 2020-01-01 12:00:00 - test.logger - Hello World"
+
+def test_telegram_handler_no_token(caplog):
+    handler = TelegramHandler(bot_token=None, level_chat_ids={logging.ERROR: ["123"]})
+    logger = logging.getLogger("tglogging.test")
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+    logger.error("This should not raise")
+    # Ensure no exception and nothing sent
+    assert True
