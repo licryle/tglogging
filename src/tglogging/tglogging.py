@@ -21,14 +21,6 @@ def configure_logger(program_name: str, cfg: LoggingConfig, verbose: bool = Fals
     logger = logging.getLogger(program_name)
     logger.setLevel(logging.DEBUG if verbose else logging.INFO)
 
-    # File handler
-    log_path = Path(cfg.log_file_path)
-    if log_path:
-        log_path.parent.mkdir(parents=True, exist_ok=True)
-        file_handler = logging.FileHandler(log_path, encoding='utf-8')
-        file_handler.setFormatter(BaseFormatter())
-        logger.addHandler(file_handler)
-
     # Console handler with optional colour output
     console_handler = logging.StreamHandler()
     try:
@@ -37,14 +29,27 @@ def configure_logger(program_name: str, cfg: LoggingConfig, verbose: bool = Fals
         console_handler.setFormatter(BaseFormatter())
     logger.addHandler(console_handler)
 
+    # File handler
+    if cfg.log_file_path:
+        log_path = Path(cfg.log_file_path)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        file_handler = logging.FileHandler(log_path, encoding='utf-8')
+        file_handler.setFormatter(BaseFormatter())
+        logger.addHandler(file_handler)
+    else:
+        logger.info("No log_file_path specified, disabling log to file")
+
     # Telegram handler (plain formatting)
-    telegram_handler = TelegramHandler(
-        bot_token=cfg.telegram_bot_token,
-        level_chat_ids=cfg.level_chat_ids,
-    )
-    telegram_handler.setLevel(logging.DEBUG)
-    telegram_handler.setFormatter(BaseFormatter())
-    logger.addHandler(telegram_handler)
+    if cfg.telegram_bot_token and cfg.level_chat_ids:
+        telegram_handler = TelegramHandler(
+            bot_token=cfg.telegram_bot_token,
+            level_chat_ids=cfg.level_chat_ids,
+        )
+        telegram_handler.setLevel(logging.DEBUG)
+        telegram_handler.setFormatter(BaseFormatter())
+        logger.addHandler(telegram_handler)
+    else:
+        logger.info("No telegram_bot_token or level_chat_ids specified, disabling log to Telegram")
 
     logger.propagate = False
 
