@@ -60,3 +60,22 @@ def test_invalid_log_file_path(tmp_path):
     assert isinstance(logger, logging.Logger)
     # Ensure the file was created
     assert pathlib.Path(cfg.log_file_path).exists()
+
+def test_none_config(tmp_path):
+    """Test logger configuration when both telegram_bot_token and log_file_path are None.
+    The logger should be created with only the console handler and no file or telegram handlers.
+    """
+    cfg = LoggingConfig(
+        log_file_path=None,
+        telegram_bot_token=None,
+        level_chat_ids={},
+    )
+    logger = configure_logger("noneapp", cfg)
+    assert isinstance(logger, logging.Logger)
+    # Expect only the console handler (StreamHandler) to be attached
+    # The console handler is added first in configure_logger
+    assert len(logger.handlers) == 1
+    console_handler = logger.handlers[0]
+    assert isinstance(console_handler, logging.StreamHandler)
+    # Logging a message should not raise
+    logger.info("test message")
