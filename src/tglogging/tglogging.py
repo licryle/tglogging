@@ -37,7 +37,7 @@ def configure_logger(program_name: str, cfg: LoggingConfig, verbose: bool = Fals
         file_handler.setFormatter(BaseFormatter())
         logger.addHandler(file_handler)
     else:
-        logger.info("No log_file_path specified, disabling log to file")
+        logger.info("No log_file_path specified, disabling log to file.")
 
     # Telegram handler (plain formatting)
     if cfg.telegram_bot_token and cfg.level_chat_ids:
@@ -49,7 +49,7 @@ def configure_logger(program_name: str, cfg: LoggingConfig, verbose: bool = Fals
         telegram_handler.setFormatter(BaseFormatter())
         logger.addHandler(telegram_handler)
     else:
-        logger.info("No telegram_bot_token or level_chat_ids specified, disabling log to Telegram")
+        logger.info("No telegram_bot_token or level_chat_ids specified, disabling log to Telegram.")
 
     logger.propagate = False
 
