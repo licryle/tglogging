@@ -7,7 +7,7 @@ import pytest
 
 # Import the library modules
 from tglogging import LoggingConfig, configure_logger
-from tglogging.tglogging import BaseFormatter, ColoredFormatter, TelegramHandler
+from tglogging.tglogging import BaseFormatter, TelegramHandler
 
 @pytest.fixture
 def config(tmp_path):

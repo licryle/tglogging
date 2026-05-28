@@ -1,4 +1,5 @@
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
+from logging import config
 from typing import Dict, List, Union
 
 @dataclass(frozen=True)
@@ -40,4 +41,4 @@ class LoggingConfig:
                 elif '_' in chat:
                     parts = chat.split('_')
                     if len(parts) != 2 or not parts[1].isdigit():
-                        raise ValueError(f"Invalid thread suffix in chat id '{chat}'")
+                        raise ValueError(f"Invalid thread suffix in chat id '{chat}'")   

@@ -3,6 +3,7 @@ import pytest
 import pathlib
 
 from tglogging import LoggingConfig, configure_logger
+from tglogging.tglogging import _mask_token
 
 
 def test_valid_config():
@@ -22,6 +23,28 @@ def test_priority_info():
     logger = configure_logger("testapp", cfg)
     logger.priority_info("Hello")
     assert True
+
+def test_mask_token():
+    # standard token format
+    token = "123456789:abcdef123456"
+    masked = _mask_token(token)
+    assert masked.startswith("123456789:")
+    assert "***" in masked
+    assert masked[-3:] == "456"  # last 3 characters preserved
+
+    # very short secret
+    short_token = "987654321:abc"
+    masked_short = _mask_token(short_token)
+    assert masked_short == "987654321:***"
+
+    # no colon
+    token_no_colon = "supersecret"
+    masked_nc = _mask_token(token_no_colon)
+    assert masked_nc == "***MASKED***"
+
+    # None or empty
+    assert _mask_token(None) is None
+    assert _mask_token("") == ""
 
 def test_invalid_log_file_path():
     with pytest.raises(ValueError):

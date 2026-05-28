@@ -1,16 +1,27 @@
 import logging
-import urllib.request
-import urllib.error
-import json
-import html
 from pathlib import Path
-import datetime
-from typing import Dict, List, Union
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from .config import LoggingConfig
 from .formatters import ColoredFormatter, BaseFormatter
 from .telegram import TelegramHandler
 from . import priority_info #ensures the monkey patch is setup
+
+def _mask_token(token: str | None) -> str | None:
+    if not token:
+        return token
+
+    # Telegram tokens are usually: <digits>:<secret>
+    if ':' in token:
+        prefix, secret = token.split(':', 1)
+
+        if len(secret) <= 6:
+            masked = '*' * len(secret)
+        else:
+            masked = f"{secret[:3]}***{secret[-3:]}"
+
+        return f"{prefix}:{masked}"
+
+    return "***MASKED***"
 
 def configure_logger(program_name: str, cfg: LoggingConfig, verbose: bool = False) -> logging.Logger:
     """Initialise the logger for the application.
@@ -52,5 +63,9 @@ def configure_logger(program_name: str, cfg: LoggingConfig, verbose: bool = Fals
         logger.info("No telegram_bot_token or level_chat_ids specified, disabling log to Telegram.")
 
     logger.propagate = False
+
+    debug_config = asdict(cfg)
+    debug_config["telegram_bot_token"] = _mask_token(debug_config.get("telegram_bot_token"))
+    logger.debug("tglogging configuration loaded: %s", debug_config)
 
     return logger
