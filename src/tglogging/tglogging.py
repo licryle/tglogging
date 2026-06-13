@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from dataclasses import asdict
 from .config import LoggingConfig
-from .formatters import ColoredFormatter, BaseFormatter
+from .formatters import ColoredFormatter, BaseFormatter, TelegramFormatter
 from .telegram import TelegramHandler
 from . import priority_info #ensures the monkey patch is setup
 
@@ -56,7 +56,7 @@ def get_logger(program_name: str, cfg: LoggingConfig) -> logging.Logger:
             level_chat_ids=cfg.level_chat_ids,
         )
         telegram_handler.setLevel(logging.DEBUG)
-        telegram_handler.setFormatter(BaseFormatter())
+        telegram_handler.setFormatter(TelegramFormatter())
         logger.addHandler(telegram_handler)
     else:
         logger.info("No telegram_bot_token or level_chat_ids specified, disabling log to Telegram.")

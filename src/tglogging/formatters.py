@@ -11,6 +11,13 @@ class BaseFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         return self._format_message(record)
 
+class TelegramFormatter(logging.Formatter):
+    """Simple log record formatter used by telegram handler."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        timestamp = datetime.datetime.fromtimestamp(record.created).strftime('%Y-%m-%d %H:%M:%S')
+        return f"[{record.name}][{record.levelname}] {timestamp}\n{record.getMessage()}"
+
 class ColoredFormatter(BaseFormatter):
     COLORS = {
         'DEBUG': '\033[90m',        # Grey
