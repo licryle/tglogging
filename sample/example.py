@@ -5,12 +5,13 @@ It configures a TGLoggingConfig, initialises logging, and emits a few log messag
 """
 
 import logging
-from tglogging import configure_logger, LoggingConfig
+from tglogging import get_logger, LoggingConfig
 
 # Replace the placeholders with your actual Telegram bot token and chat ID.
 config = LoggingConfig(
     log_file_path="./log.txt",
     telegram_bot_token="YOUR_TELEGRAM_BOT_TOKEN",
+    verbose=True,
     level_chat_ids= {
         logging.DEBUG:          ['00:0'],         # Debug
         logging.INFO:           ['00:0'],         # Info
@@ -22,7 +23,7 @@ config = LoggingConfig(
 )
 
 # Initialise the logging system with the TGLoggingConfig.
-logger = configure_logger('AppName', config, verbose=True)
+logger = get_logger('AppName', config)
 
 logger.debug("This is a DEBUG message – will appear only if level is DEBUG.")
 logger.info("Informational message sent to stdout and Telegram.")

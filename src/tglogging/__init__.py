@@ -1,8 +1,8 @@
-from .tglogging import configure_logger, LoggingConfig
+from .tglogging import get_logger, LoggingConfig
 from .priority_info import PRIORITY_INFO
 
 __all__ = [
-    "configure_logger",
+    "get_logger",
     "LoggingConfig",
     "PRIORITY_INFO",
 ]

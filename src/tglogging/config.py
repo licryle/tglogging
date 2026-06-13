@@ -1,5 +1,4 @@
 from dataclasses import asdict, dataclass, field
-from logging import config
 from typing import Dict, List, Union
 
 @dataclass(frozen=True)
@@ -16,6 +15,7 @@ class LoggingConfig:
     log_file_path: str = None
     telegram_bot_token: Union[str, None] = None
     level_chat_ids: Dict[int, List[str]] = field(default_factory=dict)
+    verbose: bool = False
 
     def __post_init__(self) -> None:
         if self.log_file_path and not isinstance(self.log_file_path, str):
@@ -26,6 +26,8 @@ class LoggingConfig:
             raise ValueError("telegram_bot_token must be a non‑empty string or None")
         if not isinstance(self.level_chat_ids, dict):
             raise TypeError("level_chat_ids must be a dict mapping int levels to list of chat ids")
+        if not isinstance(self.verbose, bool):
+            raise TypeError("verbose must be a bool")
         for level, chats in self.level_chat_ids.items():
             if not isinstance(level, int):
                 raise TypeError("level_chat_ids keys must be ints representing logging levels")

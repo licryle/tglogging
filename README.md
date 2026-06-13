@@ -30,12 +30,13 @@ You can also inspect the flake definition in `flake.nix`.
 ## 🚀 Usage
 ```python
 import logging
-from tglogging import configure_logger, LoggingConfig
+from tglogging import get_logger, LoggingConfig
 
 # Replace the placeholders with your actual Telegram bot token and chat ID.
 config = LoggingConfig(
     log_file_path="./log.txt",
     telegram_bot_token="YOUR_TELEGRAM_BOT_TOKEN",
+    verbose=True,
     level_chat_ids= {
         logging.DEBUG:          ['00:0'],         # Debug
         logging.INFO:           ['00:0'],         # Info
@@ -47,7 +48,7 @@ config = LoggingConfig(
 )
 
 # Initialise the logging system with the TGLoggingConfig.
-logger = configure_logger('AppName', config, verbose=True)
+logger = get_logger('AppName', config)
 
 logger.debug("This is a DEBUG message – will appear only if level is DEBUG.")
 logger.info("Informational message sent to stdout and Telegram.")
@@ -57,7 +58,7 @@ logger.error("Error encountered – also forwarded to Telegram.")
 logger.critical("Critical failure – immediate attention required!")
 ```
 
-> **Note:** `configure_logger` sets `logger.propagate = False` to prevent log records from bubbling up to ancestor loggers, avoiding duplicate output. You can reactivate on the returned object from `configure_logger`.
+> **Note:** `get_logger` sets `logger.propagate = False` to prevent log records from bubbling up to ancestor loggers, avoiding duplicate output. You can reactivate on the returned object from `get_logger`.
 
 The library ships a `TelegramHandler` that forwards log records to the Telegram Bot API. See the `src/tglogging/telegram.py` module for details.
 

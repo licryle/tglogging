@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict
 from .config import LoggingConfig
 from .formatters import ColoredFormatter, BaseFormatter
 from .telegram import TelegramHandler
@@ -23,14 +23,13 @@ def _mask_token(token: str | None) -> str | None:
 
     return "***MASKED***"
 
-def configure_logger(program_name: str, cfg: LoggingConfig, verbose: bool = False) -> logging.Logger:
+def get_logger(program_name: str, cfg: LoggingConfig) -> logging.Logger:
     """Initialise the logger for the application.
 
     ``cfg`` must be an instance of :class:`LoggingConfig`.
-    ``verbose`` forces the logger to ``DEBUG`` level.
     """
     logger = logging.getLogger(program_name)
-    logger.setLevel(logging.DEBUG if verbose else logging.INFO)
+    logger.setLevel(logging.DEBUG if cfg.verbose else logging.INFO)
 
     # Console handler with optional colour output
     console_handler = logging.StreamHandler()

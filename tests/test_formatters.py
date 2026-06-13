@@ -6,7 +6,7 @@ from datetime import datetime
 import pytest
 
 # Import the library modules
-from tglogging import LoggingConfig, configure_logger
+from tglogging import LoggingConfig
 from tglogging.tglogging import BaseFormatter, TelegramHandler
 
 @pytest.fixture
@@ -24,6 +24,7 @@ def test_default_config_values():
     assert cfg.log_file_path == None
     assert cfg.telegram_bot_token is None
     assert cfg.level_chat_ids == {}
+    assert cfg.verbose is False
 
 def test_formatter_output():
     fmt = BaseFormatter()

@@ -2,7 +2,7 @@ import logging
 import pytest
 import pathlib
 
-from tglogging import LoggingConfig, configure_logger
+from tglogging import LoggingConfig, get_logger
 from tglogging.tglogging import _mask_token
 
 
@@ -20,9 +20,14 @@ def test_priority_info():
         telegram_bot_token="token",
         level_chat_ids={logging.ERROR: ["123", "456:789"]},
     )
-    logger = configure_logger("testapp", cfg)
+    logger = get_logger("testapp", cfg)
     logger.priority_info("Hello")
     assert True
+
+def test_verbose_config_sets_debug_level():
+    cfg = LoggingConfig(verbose=True)
+    logger = get_logger("verboseapp", cfg)
+    assert logger.level == logging.DEBUG
 
 def test_mask_token():
     # standard token format
@@ -79,7 +84,7 @@ def test_invalid_log_file_path(tmp_path):
     # Provide a path to a directory without write permission (simulate by using a file path that is a directory)
     invalid_path = tmp_path / "nonexistent_dir" / "log.log"
     cfg = LoggingConfig(log_file_path=str(invalid_path), telegram_bot_token=None, level_chat_ids={})
-    logger = configure_logger("testapp", cfg)
+    logger = get_logger("testapp", cfg)
     assert isinstance(logger, logging.Logger)
     # Ensure the file was created
     assert pathlib.Path(cfg.log_file_path).exists()
@@ -93,10 +98,10 @@ def test_none_config(tmp_path):
         telegram_bot_token=None,
         level_chat_ids={},
     )
-    logger = configure_logger("noneapp", cfg)
+    logger = get_logger("noneapp", cfg)
     assert isinstance(logger, logging.Logger)
     # Expect only the console handler (StreamHandler) to be attached
-    # The console handler is added first in configure_logger
+    # The console handler is added first in get_logger
     assert len(logger.handlers) == 1
     console_handler = logger.handlers[0]
     assert isinstance(console_handler, logging.StreamHandler)
